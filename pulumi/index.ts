@@ -26,7 +26,6 @@ const binding = new gcp.cloudrun.IamBinding("binding", {
     service: _default.name,
     role: "roles/run.invoker",
     members: ["allUsers"],
-    // members: [pulumi.interpolate`serviceAccount:${sa.email}`],
 });
 const project = new gcp.projects.IAMBinding("project", {
     role: "roles/iam.serviceAccountTokenCreator",
