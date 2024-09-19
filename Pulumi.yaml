@@ -3,7 +3,7 @@ runtime:
   name: nodejs
   options:
     packagemanager: pnpm
-description: desc
+description: A minimal Google Cloud TypeScript Pulumi program
 config:
   pulumi:tags:
     value:
