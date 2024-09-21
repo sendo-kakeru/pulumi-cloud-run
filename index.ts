@@ -196,7 +196,7 @@ const cloudRunRemixRepo = new gcp.cloudbuildv2.Repository(
   "sendo-kakeru",
   {
     location: "asia-northeast1",
-    name: "cloud-run-remix",
+    name: "remix-docker-distroless",
     parentConnection: my_connection.id,
     // parentConnection: "cloud-run-remix",
     project: projectId,
