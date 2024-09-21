@@ -109,20 +109,6 @@ const cloudRunIamBinding = new gcp.projects.IAMBinding("cloudRunIamBinding", {
   role: "roles/run.admin", // Cloud Run 管理者ロール
   project: projectId,
 });
-// new gcp.serviceaccount.IAMMember("act_as", {
-//   // project : projectId,
-//   role: "roles/iam.serviceAccountUser",
-//   member: cloudbuild_service_account.email.apply(email => `serviceAccount:${email}`),
-//   serviceAccountId: cloudbuild_service_account.email.apply(email => `projects/${projectId}/serviceAccounts/${email}`),
-// });
-// // new gcp.cloudbuild.
-
-// new gcp.serviceaccount.IAMMember("logs_writer", {
-//   // project : projectId,
-//   role: "roles/logging.logWriter",
-//   member: cloudbuild_service_account.email.apply(email => `serviceAccount:${email}`),
-//   serviceAccountId: cloudbuild_service_account.email.apply(email => `projects/${projectId}/serviceAccounts/${email}`),
-// });
 const my_repo = new gcp.artifactregistry.Repository("cloud-run-source-deploy", {
   location: "asia-northeast1",
   repositoryId: "cloud-run-source-deploy",
@@ -132,52 +118,32 @@ const my_repo = new gcp.artifactregistry.Repository("cloud-run-source-deploy", {
     immutableTags: true,
   },
 });
-const my_connection = new gcp.cloudbuildv2.Connection(
-  "default",
-  {
-    githubConfig: {
-      appInstallationId: 54910727,
-      authorizerCredential: {
-        // oauthTokenSecretVersion:
-        //   "projects/develop-436107/secrets/cloud-run-remix-github-oauthtoken-233bd5/versions/latest",
-        oauthTokenSecretVersion: github_token_secret_version.name,
-      },
+const my_connection = new gcp.cloudbuildv2.Connection("default", {
+  githubConfig: {
+    appInstallationId: 54910727,
+    authorizerCredential: {
+      // oauthTokenSecretVersion:
+      //   "projects/develop-436107/secrets/cloud-run-remix-github-oauthtoken-233bd5/versions/latest",
+      oauthTokenSecretVersion: github_token_secret_version.name,
     },
-    // location: "asia-northeast1",
-    location: "us-central1",
+  },
+  // location: "asia-northeast1",
+  location: "us-central1",
 
-    name: "cloud-run-remix",
-    project: projectId,
-  }
-  //   {
-  //     protect: true,
-  //   }
-);
-// const my_connection = new gcp.cloudbuildv2.Connection("my-connection", {
-//   location: "asia-northeast1",
-//   name: "my-connection",
-//   githubConfig: {
-//     appInstallationId: 54910727,
-//     authorizerCredential: {
-//       oauthTokenSecretVersion: github_token_secret_version.name,
-//     },
-//   },
-// });
-// console.log("my_connection", my_connection.name);
-// console.log("github_token_secret_version", github_token_secret_version.name);
-const cloudRunRemixRepo = new gcp.cloudbuildv2.Repository(
-  "sendo-kakeru",
-  {
-    // location: "asia-northeast1",
-    location: "us-central1",
+  name: "cloud-run-remix",
+  project: projectId,
+});
 
-    name: "remix-docker-distroless",
-    parentConnection: my_connection.id,
-    // parentConnection: "cloud-run-remix",
-    project: projectId,
-    remoteUri: "https://github.com/sendo-kakeru/remix-docker-distroless.git",
-  }
-);
+const cloudRunRemixRepo = new gcp.cloudbuildv2.Repository("sendo-kakeru", {
+  // location: "asia-northeast1",
+  location: "us-central1",
+
+  name: "remix-docker-distroless",
+  parentConnection: my_connection.id,
+  // parentConnection: "cloud-run-remix",
+  project: projectId,
+  remoteUri: "https://github.com/sendo-kakeru/remix-docker-distroless.git",
+});
 
 new gcp.cloudrun.IamMember("allUsers", {
   service: "pulumi-cloud-run",
@@ -192,47 +158,10 @@ const trigger = new gcp.cloudbuild.Trigger("trigger", {
   name: "remix",
   project: "develop-436107",
   repositoryEventConfig: {
-      push: {
-          branch: "^main$",
-      },
-      repository: "projects/develop-436107/locations/us-central1/connections/cloud-run-remix/repositories/remix-docker-distroless",
+    push: {
+      branch: "^main$",
+    },
+    repository: cloudRunRemixRepo.id,
   },
-  serviceAccount: "projects/develop-436107/serviceAccounts/cloudbuild-sa@develop-436107.iam.gserviceaccount.com",
-}, {
-  // protect: true,
+  serviceAccount: pulumi.interpolate`projects/${projectId}/serviceAccounts/${cloudbuild_service_account.email}`,
 });
-// const build_trigger = new gcp.cloudbuild.Trigger("build-trigger", {
-//   name: "my-trigger",
-//   // location: "global",
-//   location: "us-central1",
-//   // location: "asia-northeast1",
-//   // github: {
-//   //   name: "cloud-run-remix",
-//   //   owner: "sendo-kakeru",
-//   //   push: {
-//   //     branch: "^main$",
-//   //   },
-//   // },
-//   repositoryEventConfig: {
-//     // repository: `projects/${projectId}/locations/asia-northeast1/connections/cloud-run-remix/repositories/sendo-kakeru-cloud-run-remix`,
-//     repository: cloudRunRemixRepo.id,
-//     push: {
-//       branch: "^main$",
-//     },
-//   },
-//   project: projectId,
-//   //   serviceAccount: `projects/${projectId}/serviceAccounts/${cloudbuild_service_account.email}`,
-//   serviceAccount:
-//     "projects/develop-436107/serviceAccounts/cloudbuild-sa@develop-436107.iam.gserviceaccount.com",
-//   // cloudbuild_service_account.id,
-//   substitutions: {
-//     _AR_HOSTNAME: "asia-northeast1-docker.pkg.dev",
-//     _DEPLOY_REGION: "asia-northeast1",
-//     _PLATFORM: "managed",
-//     _SERVICE_NAME: "pulumi-cloud-run",
-//     _TRIGGER_ID: "a62cb1db-f746-4fbd-9658-37cbe0f1f505",
-//     PROJECT_ID: projectId,
-//   },
-//   filename: "cloudbuild.yaml",
-//   // filename: "pulumi/cloudbuild.yaml",
-// });
